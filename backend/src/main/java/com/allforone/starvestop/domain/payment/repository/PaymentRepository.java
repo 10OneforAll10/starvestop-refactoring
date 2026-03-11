@@ -29,4 +29,5 @@ public interface PaymentRepository extends JpaRepository<Payment, Long>, Payment
 
     List<Payment> findByOrderAndStatusIn(Order order, Collection<PaymentStatus> statuses);
 
+    Payment findPaymentByPaymentKey(String paymentKey);
 }

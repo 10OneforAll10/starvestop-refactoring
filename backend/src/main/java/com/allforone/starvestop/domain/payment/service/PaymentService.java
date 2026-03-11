@@ -2,6 +2,8 @@ package com.allforone.starvestop.domain.payment.service;
 
 import com.allforone.starvestop.common.exception.CustomException;
 import com.allforone.starvestop.common.exception.ErrorCode;
+import com.allforone.starvestop.domain.payment.dto.response.TossConfirmResponse;
+import com.allforone.starvestop.domain.payment.dto.response.TossPaymentResponse;
 import com.allforone.starvestop.domain.payment.entity.Payment;
 import com.allforone.starvestop.domain.payment.enums.PaymentStatus;
 import com.allforone.starvestop.domain.payment.repository.PaymentRepository;
@@ -35,7 +37,6 @@ public class PaymentService {
     public Optional<Payment> findByOrderKey(String orderKey) {
         return paymentRepository.findPaymentByOrderKey(orderKey);
     }
-
 
     @Transactional
     public Payment saveAndFlush(Payment payment) {
@@ -78,15 +79,21 @@ public class PaymentService {
         );
     }
 
-    @Nullable
-    public Map tossApiConfirm(Map<String, Object> requestPayload) {
-        Map response = paymentWebClient.post()
+    public TossPaymentResponse getPayment(String paymentKey) {
+        return paymentWebClient.get()
+                .uri("/v1/payments/{paymentKey}", paymentKey)
+                .retrieve()
+                .bodyToMono(TossPaymentResponse.class)
+                .block();
+    }
+
+    public TossConfirmResponse tossApiConfirm(Map<String, Object> requestPayload) {
+        return paymentWebClient.post()
                 .uri("/v1/payments/confirm")
                 .bodyValue(requestPayload)
                 .retrieve()
-                .bodyToMono(Map.class)
+                .bodyToMono(TossConfirmResponse.class)
                 .block();
-        return response;
     }
 
 }

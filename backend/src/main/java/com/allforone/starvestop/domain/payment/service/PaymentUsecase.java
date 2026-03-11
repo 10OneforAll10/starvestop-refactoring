@@ -4,9 +4,7 @@ import com.allforone.starvestop.common.exception.CustomException;
 import com.allforone.starvestop.common.exception.ErrorCode;
 import com.allforone.starvestop.domain.order.entity.Order;
 import com.allforone.starvestop.domain.order.service.OrderService;
-import com.allforone.starvestop.domain.payment.dto.response.CreatePaymentResponse;
-import com.allforone.starvestop.domain.payment.dto.response.GetPaymentDetailsResponse;
-import com.allforone.starvestop.domain.payment.dto.response.GetPaymentResponse;
+import com.allforone.starvestop.domain.payment.dto.response.*;
 import com.allforone.starvestop.domain.payment.entity.Payment;
 import com.allforone.starvestop.domain.payment.event.PaymentEventRelay;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +12,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.math.BigDecimal;
@@ -29,7 +29,9 @@ public class PaymentUsecase {
     private final FinalizeFailTx finalizeFailTx;
     private final OrderService orderService;
     private final PaymentEventRelay paymentEventRelay;
+    private final PaymentVerifier paymentVerifier;
 
+    @Transactional
     public CreatePaymentResponse createPayment(Long userId, Long orderId) {
         Order order = orderService.getForPayment(orderId);
 
@@ -49,7 +51,6 @@ public class PaymentUsecase {
             Payment payment = Payment.request(userId, order, orderKey, amount);
             paymentService.saveAndFlush(payment);
 
-            // REQUESTED 상태 이벤트 기록
             payment.markRequestedEvent();
             paymentEventRelay.relayFrom(payment);
 
@@ -70,11 +71,43 @@ public class PaymentUsecase {
         }
 
         try {
-            paymentService.tossApiConfirm(prepareResult.requestPayload());
+            // 1. PG 승인 요청
+            TossConfirmResponse confirmResponse =
+                    paymentService.tossApiConfirm(prepareResult.requestPayload());
+
+            // 2. 서버 재검증 (응답값 기반)
+            paymentVerifier.verify(
+                    orderKey,
+                    paymentKey,
+                    BigDecimal.valueOf(amount),
+                    confirmResponse
+            );
+
+            // 3. 필요 시 PG 조회 기반 재검증까지 한 번 더
+            TossPaymentResponse paymentResponse = paymentService.getPayment(paymentKey);
+
+            paymentVerifier.verify(
+                    orderKey,
+                    paymentKey,
+                    BigDecimal.valueOf(amount),
+                    paymentResponse
+            );
+
+            // 4. 검증 통과 시 성공 확정
             return finalizeSuccessTx.finalizeSuccess(orderKey, paymentKey);
+
         } catch (WebClientResponseException e) {
+            // HTTP 4xx/5xx 응답을 받은 경우
             finalizeFailTx.finalizeFailure(orderKey, e);
             throw new CustomException(ErrorCode.PAYMENT_FAIL);
+
+        } catch (WebClientRequestException e) {
+            throw new CustomException(ErrorCode.PAYMENT_CONFIRM_PENDING);
+
+        } catch (CustomException e) {
+            // 재검증 실패 포함
+            finalizeFailTx.finalizeFailure(orderKey, e);
+            throw e;
         }
     }
 

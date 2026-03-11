@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -37,14 +38,15 @@ public class PaymentController {
     @PostMapping
     public ResponseEntity<CommonResponse<CreatePaymentResponse>> create(
             @Parameter(hidden = true) @AuthenticationPrincipal AuthUser authUser,
-            @RequestBody CreatePaymentRequest request
+            @Valid @RequestBody CreatePaymentRequest request
     ) {
         Long userId = authUser.getUserId();
-        Long orderId = request.getOrderId();
+        Long orderId = request.orderId();
 
         CreatePaymentResponse result = paymentUsecase.createPayment(userId, orderId);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.success(SuccessMessage.PAYMENT_REQUIRE_SUCCESS, result));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(CommonResponse.success(SuccessMessage.PAYMENT_REQUIRE_SUCCESS, result));
     }
 
     @Operation(summary = "결제 성공 콜백 (Redirect)" + ApiRoleLabels.AUTH)

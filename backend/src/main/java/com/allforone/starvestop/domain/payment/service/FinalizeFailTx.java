@@ -1,5 +1,6 @@
 package com.allforone.starvestop.domain.payment.service;
 
+import com.allforone.starvestop.common.exception.CustomException;
 import com.allforone.starvestop.domain.order.entity.OrderProduct;
 import com.allforone.starvestop.domain.order.service.OrderProductService;
 import com.allforone.starvestop.domain.payment.entity.Payment;
@@ -24,7 +25,7 @@ public class FinalizeFailTx {
     private final PaymentEventRelay paymentEventRelay;
 
     @Transactional
-    public void finalizeFailure(String orderKey, WebClientResponseException e) {
+    public void finalizeFailure(String orderKey, Exception e) {
         Payment payment = paymentService.findByOrderKeyForUpdate(orderKey);
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
@@ -32,12 +33,12 @@ public class FinalizeFailTx {
         }
 
         if (isRetryable(e)) {
-            payment.failRetryable(paymentService.toJson(e));
+            payment.failRetryable(buildFailurePayload(e));
             paymentEventRelay.relayFrom(payment);
             return;
         }
 
-        payment.failNonRetryable(paymentService.toJson(e));
+        payment.failNonRetryable(buildFailurePayload(e));
         releaseReservedStock(payment);
         payment.markStockReleased();
         paymentEventRelay.relayFrom(payment);
@@ -63,8 +64,36 @@ public class FinalizeFailTx {
         paymentEventRelay.relayFrom(payment);
     }
 
-    private boolean isRetryable(WebClientResponseException e) {
-        return e.getStatusCode().is5xxServerError();
+    private boolean isRetryable(Exception e) {
+        if (e instanceof WebClientResponseException webEx) {
+            return webEx.getStatusCode().is5xxServerError();
+        }
+
+        return false;
+    }
+
+    private String buildFailurePayload(Exception e) {
+        if (e instanceof WebClientResponseException webEx) {
+            return paymentService.toJson(Map.of(
+                    "type", "WEBCLIENT_RESPONSE_EXCEPTION",
+                    "status", webEx.getStatusCode().value(),
+                    "message", webEx.getMessage(),
+                    "responseBody", webEx.getResponseBodyAsString()
+            ));
+        }
+
+        if (e instanceof CustomException customEx) {
+            return paymentService.toJson(Map.of(
+                    "type", "CUSTOM_EXCEPTION",
+                    "errorCode", customEx.getErrorCode().name(),
+                    "message", customEx.getMessage()
+            ));
+        }
+
+        return paymentService.toJson(Map.of(
+                "type", e.getClass().getSimpleName(),
+                "message", e.getMessage()
+        ));
     }
 
     private void releaseReservedStock(Payment payment) {

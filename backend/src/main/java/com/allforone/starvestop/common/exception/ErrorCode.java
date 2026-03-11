@@ -54,6 +54,12 @@ public enum ErrorCode {
     DUPLICATE_ORDER_ID(HttpStatus.CONFLICT, "이미 존재하는 주문 번호입니다"),
     BILLING_KEY_ISSUE_FAILED(HttpStatus.BAD_GATEWAY, "결제 수단 등록에 실패 하였습니다"),
     PAYMENT_FAIL(HttpStatus.BAD_REQUEST, "결제에 실패하였습니다"),
+    PAYMENT_CONFIRM_PENDING(HttpStatus.ACCEPTED, "결제 승인 결과를 확인 중입니다"),
+    PAYMENT_VERIFY_FAIL(HttpStatus.BAD_REQUEST, "결제 정보 검증에 실패했습니다"),
+    PAYMENT_ORDER_MISMATCH(HttpStatus.BAD_REQUEST, "주문 정보가 일치하지 않습니다"),
+    PAYMENT_KEY_MISMATCH(HttpStatus.BAD_REQUEST, "결제 키가 일치하지 않습니다"),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다"),
+    PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "결제 상태가 올바르지 않습니다"),
 
     // 구매
     PURCHASE_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 상품 유형입니다"),
