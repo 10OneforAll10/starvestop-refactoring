@@ -6,11 +6,13 @@ import com.allforone.starvestop.domain.cart.entity.Cart;
 import com.allforone.starvestop.domain.cart.service.CartService;
 import com.allforone.starvestop.domain.coupon.entity.UserCoupon;
 import com.allforone.starvestop.domain.coupon.service.UserCouponService;
+import com.allforone.starvestop.domain.order.dto.OrderProductQuantityDto;
 import com.allforone.starvestop.domain.order.dto.OrderResponse;
 import com.allforone.starvestop.domain.order.entity.Order;
 import com.allforone.starvestop.domain.payment.entity.Payment;
 import com.allforone.starvestop.domain.payment.enums.PaymentStatus;
 import com.allforone.starvestop.domain.payment.service.PaymentService;
+import com.allforone.starvestop.domain.product.dto.request.StockDecreaseRequest;
 import com.allforone.starvestop.domain.product.entity.Product;
 import com.allforone.starvestop.domain.product.enums.ProductStatus;
 import com.allforone.starvestop.domain.product.service.ProductService;
@@ -19,15 +21,16 @@ import com.allforone.starvestop.domain.store.service.StoreService;
 import com.allforone.starvestop.domain.user.entity.User;
 import com.allforone.starvestop.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class OrderUseCase {
 
@@ -52,7 +55,14 @@ public class OrderUseCase {
 
         cartListEmptyCheck(cartList);
 
-        cartList.forEach(cart -> productService.decreaseById(cart.getProduct().getId(), cart.getQuantity()));
+        List<StockDecreaseRequest> stockDecreaseRequests = cartList.stream()
+                .map(cart -> new StockDecreaseRequest(
+                        cart.getProduct().getId(),
+                        cart.getQuantity()
+                ))
+                .collect(Collectors.toList());
+
+        productService.decreaseStockBulkBatchUpdate(stockDecreaseRequests);
 
         BigDecimal amount = calculateAmount(cartList, userCoupon);
 
@@ -87,9 +97,8 @@ public class OrderUseCase {
             order.cancel();
 
             // 2. 재고 반환
-            orderProductService.getOrderProductQuantityList(order.getId())
-                    .forEach(dto -> productService.increaseById(dto.getId(), dto.getQuantity()));
-
+            List<OrderProductQuantityDto> dtoList = orderProductService.getOrderProductQuantityList(order.getId());
+            productService.increaseStockBulkBatchUpdate(dtoList);
 
             // 3. 쿠폰 복구
             UserCoupon userCoupon = order.getUserCoupon();
@@ -124,8 +133,6 @@ public class OrderUseCase {
                 SET stock = stock + ?
                 WHERE id = ?
                 """;
-
-
     }
 
     private void cartListEmptyCheck(List<Cart> cartList) {

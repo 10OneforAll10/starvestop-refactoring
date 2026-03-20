@@ -1,0 +1,19 @@
+version: '3'
+services:
+# 1. 프로메테우스 (데이터 수집)
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # 위에서 만든 설정 파일 연결
+
+      # 2. 그라파나 (시각화 도구)
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # 초기 비밀번호 설정

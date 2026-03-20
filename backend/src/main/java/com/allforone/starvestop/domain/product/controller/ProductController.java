@@ -7,6 +7,7 @@ import com.allforone.starvestop.common.dto.CommonResponse;
 import com.allforone.starvestop.common.dto.SliceResponse;
 import com.allforone.starvestop.domain.product.dto.condition.SearchProductCond;
 import com.allforone.starvestop.domain.product.dto.request.CreateProductRequest;
+import com.allforone.starvestop.domain.product.dto.request.StockDecreaseRequest;
 import com.allforone.starvestop.domain.product.dto.request.UpdateProductRequest;
 import com.allforone.starvestop.domain.product.dto.response.*;
 import com.allforone.starvestop.domain.product.service.ProductService;
@@ -22,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static com.allforone.starvestop.common.enums.SuccessMessage.*;
 
@@ -118,6 +121,27 @@ public class ProductController {
 
         CommonResponse<Void> response = CommonResponse.successNoData(PRODUCT_DELETE_SUCCESS);
 
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/stock/decrease")
+    public ResponseEntity<CommonResponse<Void>> decreaseStock(@AuthenticationPrincipal AuthUser authUser, @RequestBody StockDecreaseRequest request) throws InterruptedException {
+        productService.decreaseById(request.getProductId(),request.getQuantity());
+        CommonResponse<Void> response = CommonResponse.successNoData(PRODUCT_DELETE_SUCCESS);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/stock/decrease-bulk-batch-update")
+    public ResponseEntity<CommonResponse<Void>> decreaseStockBulk(@AuthenticationPrincipal AuthUser authUser, @RequestBody List<StockDecreaseRequest> request) throws InterruptedException {
+        productService.decreaseStockBulkBatchUpdate(request);
+        CommonResponse<Void> response = CommonResponse.successNoData(PRODUCT_DELETE_SUCCESS);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/stock/decrease-bulk-update")
+    public ResponseEntity<CommonResponse<Void>> decreaseStock(@AuthenticationPrincipal AuthUser authUser, @RequestBody List<StockDecreaseRequest> request) throws InterruptedException {
+        productService.decreaseStockUpdate(request);
+        CommonResponse<Void> response = CommonResponse.successNoData(PRODUCT_DELETE_SUCCESS);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

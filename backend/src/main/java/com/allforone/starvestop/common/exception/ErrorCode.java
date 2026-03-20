@@ -32,6 +32,7 @@ public enum ErrorCode {
     // 상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 상품입니다"),
     PRODUCT_NOT_ENOUGH_STOCK(HttpStatus.BAD_REQUEST, "남아있는 상품 수량이 부족합니다"),
+    PRODUCT_LIST_ITEM_NOT_ENOUGH_STOCK(HttpStatus.BAD_REQUEST, "재고가 부족한 상품이 포함되어 주문이 취소되었습니다."),
     // 매장
     STORE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 매장입니다"),
 

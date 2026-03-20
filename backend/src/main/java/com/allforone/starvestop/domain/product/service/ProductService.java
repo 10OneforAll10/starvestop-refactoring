@@ -4,13 +4,16 @@ import com.allforone.starvestop.common.dto.AuthUser;
 import com.allforone.starvestop.common.enums.UserRole;
 import com.allforone.starvestop.common.exception.CustomException;
 import com.allforone.starvestop.common.exception.ErrorCode;
+import com.allforone.starvestop.domain.order.dto.OrderProductQuantityDto;
 import com.allforone.starvestop.domain.product.dto.ProductSaleDto;
 import com.allforone.starvestop.domain.product.dto.ProductSaleProjection;
 import com.allforone.starvestop.domain.product.dto.condition.SearchProductCond;
 import com.allforone.starvestop.domain.product.dto.request.CreateProductRequest;
+import com.allforone.starvestop.domain.product.dto.request.StockDecreaseRequest;
 import com.allforone.starvestop.domain.product.dto.request.UpdateProductRequest;
 import com.allforone.starvestop.domain.product.dto.response.*;
 import com.allforone.starvestop.domain.product.entity.Product;
+import com.allforone.starvestop.domain.product.repository.ProductBulkUpdateRepository;
 import com.allforone.starvestop.domain.product.repository.ProductRepository;
 import com.allforone.starvestop.domain.s3.enums.S3BucketStatus;
 import com.allforone.starvestop.domain.s3.service.S3Service;
@@ -26,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,6 +42,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final StoreService storeService;
     private final StoreRedisService storeRedisService;
+    private final ProductBulkUpdateRepository productBulkUpdateRepository;
 
     //특정 매장 상품 추가
     @Transactional
@@ -226,9 +231,29 @@ public class ProductService {
         productRepository.findByIdAndDecreaseStock(id, count);
     }
 
+    //상품 재고 차감(-)
+    @Transactional
+    public void decreaseStockBulkBatchUpdate(List<StockDecreaseRequest> request) {
+        productBulkUpdateRepository.decreaseStockWithBatchUpdate(request);
+    }
+
+    @Transactional
+    public void decreaseStockUpdate(List<StockDecreaseRequest> request) {
+        request.sort(Comparator.comparing(StockDecreaseRequest::getProductId));
+        for (StockDecreaseRequest req : request) {
+            productRepository.findByIdAndDecreaseStock(req.getProductId(), req.getQuantity());
+        }
+    }
+
     //상품 재고 가산(+)
     @Transactional
     public void increaseById(Long id, Integer count) {
         productRepository.findByIdAndIncreaseStock(id, count);
     }
+
+    @Transactional
+    public void increaseStockBulkBatchUpdate(List<OrderProductQuantityDto> request) {
+        productBulkUpdateRepository.increaseStockWithBatchUpdate(request);
+    }
+
 }
