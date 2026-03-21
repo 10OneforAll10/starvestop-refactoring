@@ -6,18 +6,16 @@ import com.allforone.starvestop.domain.payment.dto.response.TossConfirmResponse;
 import com.allforone.starvestop.domain.payment.dto.response.TossPaymentResponse;
 import com.allforone.starvestop.domain.payment.entity.Payment;
 import com.allforone.starvestop.domain.payment.enums.PaymentStatus;
+import com.allforone.starvestop.domain.payment.infra.TossPaymentClient;
 import com.allforone.starvestop.domain.payment.repository.PaymentRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +26,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final ObjectMapper objectMapper;
-    private final @Qualifier("paymentWebClient") WebClient paymentWebClient;
+    private final TossPaymentClient tossPaymentClient;
 
     public Payment getByOrderKey(String orderKey) {
         return paymentRepository.getPaymentByOrderKey(orderKey);
@@ -65,7 +63,8 @@ public class PaymentService {
     }
 
     public Payment findById(Long paymentId) {
-        return paymentRepository.findById(paymentId).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+        return paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 
     public int checkClaimed(Payment payment) {
@@ -80,20 +79,10 @@ public class PaymentService {
     }
 
     public TossPaymentResponse getPayment(String paymentKey) {
-        return paymentWebClient.get()
-                .uri("/v1/payments/{paymentKey}", paymentKey)
-                .retrieve()
-                .bodyToMono(TossPaymentResponse.class)
-                .block();
+        return tossPaymentClient.getPayment(paymentKey);
     }
 
     public TossConfirmResponse tossApiConfirm(Map<String, Object> requestPayload) {
-        return paymentWebClient.post()
-                .uri("/v1/payments/confirm")
-                .bodyValue(requestPayload)
-                .retrieve()
-                .bodyToMono(TossConfirmResponse.class)
-                .block();
+        return tossPaymentClient.confirmPayment(requestPayload);
     }
-
 }

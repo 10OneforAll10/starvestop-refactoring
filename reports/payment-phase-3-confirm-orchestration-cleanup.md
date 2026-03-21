@@ -92,16 +92,20 @@
 ## 9. 테스트 및 검증
 이번 단계에서는 오케스트레이션 흐름 자체를 검증하는 데 집중했다.
 
-### 단위 테스트
+### 테스트 대상
 - `PaymentUsecaseTest`
 - `PaymentUsecaseOrchestrationTest`
 - `PaymentUsecaseBenchmarkTest`
 
-### 검증 항목
-- prepare -> PG 승인 -> 검증 -> PG 조회 -> 재검증 -> 성공 확정 순서 보장
-- PG 응답 오류 시 실패 확정 및 예외 처리
-- 네트워크 오류 시 pending 예외 처리
-- 전체 백엔드 테스트 통과
+### 테스트 항목
+| 테스트 대상 | 검증 내용 | 결과 |
+|---|---|---|
+| PaymentUsecaseTest | 기존 결제 승인 성공/실패/예외 흐름이 리팩터링 이후에도 동일하게 유지되는지 검증 | 통과 |
+| PaymentUsecaseOrchestrationTest | prepare -> PG 승인 -> 응답 검증 -> PG 조회 -> 재검증 -> 성공 확정 순서가 보장되는지 검증 | 통과 |
+| PaymentUsecaseOrchestrationTest | PG 응답 오류 발생 시 실패 확정 후 `PAYMENT_FAIL` 예외를 던지는지 검증 | 통과 |
+| PaymentUsecaseOrchestrationTest | 네트워크 오류 발생 시 실패 확정 없이 `PAYMENT_CONFIRM_PENDING` 예외를 던지는지 검증 | 통과 |
+| PaymentUsecaseBenchmarkTest | 동일 mocked 조건에서 `confirmSuccess()`의 변경 전/후 성능 기준선을 측정하는지 검증 | 통과 |
+| 전체 백엔드 테스트 | 리팩터링 이후 기존 백엔드 테스트 스위트가 모두 정상 동작하는지 검증 | 통과 |
 
 ## 10. 정량 지표
 이번 단계의 정량 지표는 동일한 mocked 조건에서 `confirmSuccess()`를 반복 실행하는 마이크로 벤치마크를 기준으로 측정했다.
