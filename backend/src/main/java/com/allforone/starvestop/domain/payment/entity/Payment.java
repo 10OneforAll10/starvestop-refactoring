@@ -119,7 +119,7 @@ public class Payment {
     }
 
     public void failNonRetryable(String payload) {
-        requireStatus(PaymentStatus.PENDING);
+        requireStatus(PaymentStatus.REQUESTED, PaymentStatus.PENDING);
         this.status = PaymentStatus.FAILED_NON_RETRYABLE;
 
         domainEvents.add(PaymentStatusChangedEvent.of(

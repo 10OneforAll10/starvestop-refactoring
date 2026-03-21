@@ -1,0 +1,164 @@
+{
+    "metrics": {
+        "data_sent": {
+            "rate": 618.4935108865059,
+            "count": 24766
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 12
+        },
+        "checks": {
+            "passes": 1270,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_reqs": {
+            "rate": 6.343267050196742,
+            "count": 254
+        },
+        "http_req_duration": {
+            "avg": 0.3115326771653543,
+            "min": 0,
+            "med": 0,
+            "max": 3.6079,
+            "p(90)": 0.72965,
+            "p(95)": 0.8695599999999998,
+            "thresholds": {
+                "p(95)<500": false
+            }
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 254,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "iteration_duration": {
+            "min": 1000.0094,
+            "med": 1000.95115,
+            "max": 1005.0422,
+            "p(90)": 1001.78115,
+            "p(95)": 1001.98108,
+            "avg": 1001.0000188976384
+        },
+        "http_req_waiting": {
+            "avg": 0.20470039370078733,
+            "min": 0,
+            "med": 0,
+            "max": 2.576,
+            "p(90)": 0.52746,
+            "p(95)": 0.6386999999999999
+        },
+        "vus_max": {
+            "value": 12,
+            "min": 12,
+            "max": 12
+        },
+        "http_req_duration{expected_response:true}": {
+            "max": 3.6079,
+            "p(90)": 0.72965,
+            "p(95)": 0.8695599999999998,
+            "avg": 0.3115326771653543,
+            "min": 0,
+            "med": 0
+        },
+        "http_req_blocked": {
+            "avg": 0.08484527559055116,
+            "min": 0,
+            "med": 0,
+            "max": 2.7496,
+            "p(90)": 0.17201000000000002,
+            "p(95)": 0.5095649999999999
+        },
+        "http_req_receiving": {
+            "avg": 0.0815259842519685,
+            "min": 0,
+            "med": 0,
+            "max": 3.0517,
+            "p(90)": 0.21125000000000002,
+            "p(95)": 0.519065
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 1.0008,
+            "p(90)": 0.17074,
+            "p(95)": 0.18938999999999992,
+            "avg": 0.07062047244094488,
+            "min": 0
+        },
+        "data_received": {
+            "count": 70855,
+            "rate": 1769.4967985893313
+        },
+        "iterations": {
+            "count": 254,
+            "rate": 6.343267050196742
+        },
+        "http_req_sending": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.025306299212598426,
+            "min": 0,
+            "med": 0,
+            "max": 2.6024
+        }
+    },
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "status is 200": {
+                    "name": "status is 200",
+                    "path": "::status is 200",
+                    "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                    "passes": 254,
+                    "fails": 0
+                },
+                "status field exists": {
+                    "name": "status field exists",
+                    "path": "::status field exists",
+                    "id": "b49a6f60d9e7ef024495b10000d378ce",
+                    "passes": 254,
+                    "fails": 0
+                },
+                "success keeps stock": {
+                    "path": "::success keeps stock",
+                    "id": "20c8f02a59946c2385b43c4e5ab1cbbd",
+                    "passes": 254,
+                    "fails": 0,
+                    "name": "success keeps stock"
+                },
+                "retryable keeps stock": {
+                    "name": "retryable keeps stock",
+                    "path": "::retryable keeps stock",
+                    "id": "5e77108b9dd65b9f15d3ed7b02484001",
+                    "passes": 254,
+                    "fails": 0
+                },
+                "nonretryable releases stock": {
+                    "name": "nonretryable releases stock",
+                    "path": "::nonretryable releases stock",
+                    "id": "31dcda824bf9614f3f02645a6a916eeb",
+                    "passes": 254,
+                    "fails": 0
+                }
+            },
+        "name": "",
+        "path": ""
+    }
+}
