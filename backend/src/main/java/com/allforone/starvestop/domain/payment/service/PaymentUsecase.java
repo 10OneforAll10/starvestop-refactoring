@@ -63,53 +63,65 @@ public class PaymentUsecase {
     }
 
     public PaymentConfirmResponse confirmSuccess(String paymentKey, String orderKey, Long amount) {
-        PrepareConfirmResult prepareResult =
-                prepareConfirmTx.prepare(orderKey, paymentKey, amount);
+        PrepareConfirmResult prepareResult = prepareConfirm(orderKey, paymentKey, amount);
 
         if (prepareResult.alreadySucceeded()) {
             return PaymentConfirmResponse.success(prepareResult.orderId(), orderKey);
         }
 
         try {
-            // 1. PG 승인 요청
-            TossConfirmResponse confirmResponse =
-                    paymentService.tossApiConfirm(prepareResult.requestPayload());
+            TossConfirmResponse confirmResponse = requestPaymentConfirmation(prepareResult);
+            verifyConfirmedPayment(orderKey, paymentKey, amount, confirmResponse);
 
-            // 2. 서버 재검증 (응답값 기반)
-            paymentVerifier.verify(
-                    orderKey,
-                    paymentKey,
-                    BigDecimal.valueOf(amount),
-                    confirmResponse
-            );
+            TossPaymentResponse paymentResponse = fetchConfirmedPayment(paymentKey);
+            verifyFetchedPayment(orderKey, paymentKey, amount, paymentResponse);
 
-            // 3. 필요 시 PG 조회 기반 재검증까지 한 번 더
-            TossPaymentResponse paymentResponse = paymentService.getPayment(paymentKey);
-
-            paymentVerifier.verify(
-                    orderKey,
-                    paymentKey,
-                    BigDecimal.valueOf(amount),
-                    paymentResponse
-            );
-
-            // 4. 검증 통과 시 성공 확정
-            Long confirmedOrderId = finalizeSuccessTx.finalizeSuccess(orderKey, paymentKey);
-            return PaymentConfirmResponse.success(confirmedOrderId, orderKey);
+            return finalizeConfirmedPayment(orderKey, paymentKey);
 
         } catch (WebClientResponseException e) {
-            // HTTP 4xx/5xx 응답을 받은 경우
-            finalizeFailTx.finalizeFailure(orderKey, e);
+            handlePgResponseFailure(orderKey, e);
             throw new CustomException(ErrorCode.PAYMENT_FAIL);
 
         } catch (WebClientRequestException e) {
             throw new CustomException(ErrorCode.PAYMENT_CONFIRM_PENDING);
 
         } catch (CustomException e) {
-            // 재검증 실패 포함
-            finalizeFailTx.finalizeFailure(orderKey, e);
+            handleVerificationFailure(orderKey, e);
             throw e;
         }
+    }
+
+    private PrepareConfirmResult prepareConfirm(String orderKey, String paymentKey, Long amount) {
+        return prepareConfirmTx.prepare(orderKey, paymentKey, amount);
+    }
+
+    private TossConfirmResponse requestPaymentConfirmation(PrepareConfirmResult prepareResult) {
+        return paymentService.tossApiConfirm(prepareResult.requestPayload());
+    }
+
+    private void verifyConfirmedPayment(String orderKey, String paymentKey, Long amount, TossConfirmResponse confirmResponse) {
+        paymentVerifier.verify(orderKey, paymentKey, BigDecimal.valueOf(amount), confirmResponse);
+    }
+
+    private TossPaymentResponse fetchConfirmedPayment(String paymentKey) {
+        return paymentService.getPayment(paymentKey);
+    }
+
+    private void verifyFetchedPayment(String orderKey, String paymentKey, Long amount, TossPaymentResponse paymentResponse) {
+        paymentVerifier.verify(orderKey, paymentKey, BigDecimal.valueOf(amount), paymentResponse);
+    }
+
+    private PaymentConfirmResponse finalizeConfirmedPayment(String orderKey, String paymentKey) {
+        Long confirmedOrderId = finalizeSuccessTx.finalizeSuccess(orderKey, paymentKey);
+        return PaymentConfirmResponse.success(confirmedOrderId, orderKey);
+    }
+
+    private void handlePgResponseFailure(String orderKey, WebClientResponseException e) {
+        finalizeFailTx.finalizeFailure(orderKey, e);
+    }
+
+    private void handleVerificationFailure(String orderKey, CustomException e) {
+        finalizeFailTx.finalizeFailure(orderKey, e);
     }
 
     public void failRedirect(String code, String orderId) {

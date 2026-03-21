@@ -9,8 +9,8 @@ from reportlab.lib.units import mm
 from reportlab.lib import colors
 
 ROOT = Path(r"C:\Users\User\Desktop\refactoring\starvestop-refactoring")
-SRC = ROOT / "reports" / "payment-phase-2-state-transition-and-failure-policy.md"
-OUT = Path(r"C:\Users\User\Desktop\payment-phase-2-state-transition-and-failure-policy-v3.pdf")
+SRC = ROOT / "reports" / "payment-phase-3-confirm-orchestration-cleanup.md"
+OUT = Path(r"C:\Users\User\Desktop\payment-phase-3-confirm-orchestration-cleanup.pdf")
 
 font_candidates = [r"C:\Windows\Fonts\malgun.ttf", r"C:\Windows\Fonts\맑은 고딕.ttf"]
 registered_font = None
