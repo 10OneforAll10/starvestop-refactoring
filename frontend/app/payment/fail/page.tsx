@@ -15,7 +15,6 @@ function PaymentFailContent() {
 
     const code = searchParams.get('code');
     const message = searchParams.get('message') || '결제에 실패했습니다.';
-    const orderId = searchParams.get('orderId');
 
     const getErrorMessage = (code: string | null) => {
         switch (code) {

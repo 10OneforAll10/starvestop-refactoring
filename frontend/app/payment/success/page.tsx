@@ -20,23 +20,20 @@ function PaymentSuccessContent() {
     useEffect(() => {
         const confirm = async () => {
             const paymentKey = searchParams.get('paymentKey');
-            const orderIdUUID = searchParams.get('orderId'); // 토스에서 온 UUID
+            const orderKey = searchParams.get('orderId');
             const amount = searchParams.get('amount');
-            const paymentType = searchParams.get('paymentType');
 
-            if (!paymentKey || !orderIdUUID || !amount) return;
+            if (!paymentKey || !orderKey || !amount) return;
 
             try {
                 // 1. 백엔드 승인 요청 (결과로 실제 DB ID인 PK를 받아옵니다)
                 const response = await paymentsApi.confirmPayment({
                     paymentKey,
-                    orderId: orderIdUUID,
+                    orderKey,
                     amount: Number(amount),
-                    paymentType: paymentType || 'NORMAL'
                 });
 
-                // 백엔드에서 준 실제 숫자 ID (예: 18)
-                const realDbOrderId = response.data;
+                const realDbOrderId = response.orderId;
 
                 await cartApi.clearCart();
                 setStatus('SUCCESS');

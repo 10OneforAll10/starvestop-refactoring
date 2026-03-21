@@ -62,12 +62,12 @@ public class PaymentUsecase {
         }
     }
 
-    public Long confirmSuccess(String paymentKey, String orderKey, Long amount) {
+    public PaymentConfirmResponse confirmSuccess(String paymentKey, String orderKey, Long amount) {
         PrepareConfirmResult prepareResult =
                 prepareConfirmTx.prepare(orderKey, paymentKey, amount);
 
         if (prepareResult.alreadySucceeded()) {
-            return prepareResult.orderId();
+            return PaymentConfirmResponse.success(prepareResult.orderId(), orderKey);
         }
 
         try {
@@ -94,7 +94,8 @@ public class PaymentUsecase {
             );
 
             // 4. 검증 통과 시 성공 확정
-            return finalizeSuccessTx.finalizeSuccess(orderKey, paymentKey);
+            Long confirmedOrderId = finalizeSuccessTx.finalizeSuccess(orderKey, paymentKey);
+            return PaymentConfirmResponse.success(confirmedOrderId, orderKey);
 
         } catch (WebClientResponseException e) {
             // HTTP 4xx/5xx 응답을 받은 경우

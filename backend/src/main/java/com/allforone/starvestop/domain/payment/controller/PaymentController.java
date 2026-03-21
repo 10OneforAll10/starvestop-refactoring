@@ -9,6 +9,7 @@ import com.allforone.starvestop.domain.payment.dto.request.CreatePaymentRequest;
 import com.allforone.starvestop.domain.payment.dto.response.CreatePaymentResponse;
 import com.allforone.starvestop.domain.payment.dto.response.GetPaymentDetailsResponse;
 import com.allforone.starvestop.domain.payment.dto.response.GetPaymentResponse;
+import com.allforone.starvestop.domain.payment.dto.response.PaymentConfirmResponse;
 import com.allforone.starvestop.domain.payment.service.PaymentUsecase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,13 +52,13 @@ public class PaymentController {
 
     @Operation(summary = "결제 성공 콜백 (Redirect)" + ApiRoleLabels.AUTH)
     @GetMapping("/success")
-    public ResponseEntity<CommonResponse<Long>> success(
+    public ResponseEntity<CommonResponse<PaymentConfirmResponse>> success(
             @RequestParam String paymentKey,
-            @RequestParam String orderId,
+            @RequestParam("orderId") String orderKey,
             @RequestParam Long amount
     ) {
-        Long dbOrderId = paymentUsecase.confirmSuccess(paymentKey, orderId, amount);
-        return ResponseEntity.ok(CommonResponse.success(SuccessMessage.PAYMENT_REQUIRE_SUCCESS, dbOrderId));
+        PaymentConfirmResponse response = paymentUsecase.confirmSuccess(paymentKey, orderKey, amount);
+        return ResponseEntity.ok(CommonResponse.success(SuccessMessage.PAYMENT_REQUIRE_SUCCESS, response));
     }
 
     @Operation(summary = "결제 실패 콜백 (Redirect)" + ApiRoleLabels.AUTH)

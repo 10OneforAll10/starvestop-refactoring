@@ -9,32 +9,27 @@ export interface CreatePaymentResponse {
     amount: number;
 }
 
-export interface PaymentPrepareResponse {
+export interface PaymentConfirmResponse {
+    orderId: number;
     orderKey: string;
-    amount: number;
-    customerKey: string;
-    // 필요한 다른 필드가 있다면 추가하세요.
+    status: 'SUCCEEDED';
 }
 
 export const paymentsApi = {
     preparePayment: async (orderId: number) => {
         const response = await apiClient.post('/payments', { orderId });
-        // ✅ 요청하신 대로 .data 한 번만 사용
         return response.data as CreatePaymentResponse;
     },
 
-    confirmPayment: async (params: { paymentKey: string; orderId: string; amount: number; paymentType: string }) => {
-        // 백엔드의 GET /payments/success 엔드포인트 호출
+    confirmPayment: async (params: { paymentKey: string; orderKey: string; amount: number }) => {
         const response = await apiClient.get('/payments/success', {
             params: {
                 paymentKey: params.paymentKey,
-                orderId: params.orderId,
+                orderId: params.orderKey,
                 amount: params.amount,
-                paymentType: params.paymentType
             }
         });
 
-        // 리다이렉트 된 최종 URL 등을 확인하기 위해 response 객체 전체를 반환
-        return response;
+        return response.data as PaymentConfirmResponse;
     }
 };
