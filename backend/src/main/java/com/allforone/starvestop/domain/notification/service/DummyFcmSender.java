@@ -5,7 +5,6 @@ import com.allforone.starvestop.common.exception.ErrorCode;
 import com.allforone.starvestop.domain.notification.dto.FcmMessageResult;
 import com.google.firebase.messaging.Message;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -13,22 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 @Slf4j
 @Component
 @Profile({"local"})
 public class DummyFcmSender implements FcmSender {
 
-    private final Executor fcmThreadPool;
     private final Random random = new Random();
 
     private static final int MEAN_LATENCY = 700; // 평균 지연시간 700ms
     private static final int STD_DEV = 100; // 표준 편차 100ms
-
-    public DummyFcmSender(@Qualifier("fcmThreadPool") Executor fcmThreadPool) {
-        this.fcmThreadPool = fcmThreadPool;
-    }
 
     @Override
     public CompletableFuture<List<FcmMessageResult>> sendAllAsync(List<Message> messageList) {
@@ -65,7 +58,7 @@ public class DummyFcmSender implements FcmSender {
         return resultList;
     }
 
-    private List<FcmMessageResult> generateMockResultList(int size){
+    private List<FcmMessageResult> generateMockResultList(int size) {
         List<FcmMessageResult> resultList = new ArrayList<>();
         for (int i = 0; i < size; ++i) {
             boolean isSuccess = random.nextInt(100) > 0;

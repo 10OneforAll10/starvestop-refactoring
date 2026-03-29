@@ -105,8 +105,6 @@ public class NotificationJobService {
             List<Message> messageList = getMessageList(jobList);
 
             try {
-                // 비동기로 변경하여 네트워크 대기 시간 최소화
-                // .get()을 통해 현재 chunk 발송이 끝날 때까지만 대기
                 BatchResponse response = FirebaseMessaging.getInstance().sendEachAsync(messageList).get();
 
                 List<String> invalidTokenList = new ArrayList<>();
@@ -236,8 +234,6 @@ public class NotificationJobService {
             try {
 
                 List<FcmMessageResult> resultList = fcmSender.sendAllSync(messageList);
-
-                // ==========================================
 
                 List<String> invalidTokenList = new ArrayList<>();
                 List<Long> successIdList = new ArrayList<>();

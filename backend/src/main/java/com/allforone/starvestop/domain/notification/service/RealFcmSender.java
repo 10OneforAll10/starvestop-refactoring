@@ -22,10 +22,9 @@ public class RealFcmSender implements FcmSender {
     public CompletableFuture<List<FcmMessageResult>> sendAllAsync(List<Message> messageList) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                long networkStart = System.currentTimeMillis();
+
                 BatchResponse response = FirebaseMessaging.getInstance().sendEachAsync(messageList).get();
-                long networkTime = System.currentTimeMillis() - networkStart;
-                log.info("--- 처리완료. 네트워크 오버헤드 : {}ms", networkTime);
+
                 return mapToCustomResult(response);
             } catch (InterruptedException e) {
                 throw new CustomException(ErrorCode.ASYNC_ERROR);
@@ -37,10 +36,9 @@ public class RealFcmSender implements FcmSender {
 
     @Override
     public List<FcmMessageResult> sendAllSync(List<Message> messageList) throws InterruptedException, FirebaseMessagingException {
-        long networkStart = System.currentTimeMillis();
+
         BatchResponse response = FirebaseMessaging.getInstance().sendEach(messageList);
-        long networkTime = System.currentTimeMillis() - networkStart;
-        log.info("--- 처리완료. 동기처리 오버헤드 : {}ms", networkTime);
+
         return mapToCustomResult(response);
     }
 
