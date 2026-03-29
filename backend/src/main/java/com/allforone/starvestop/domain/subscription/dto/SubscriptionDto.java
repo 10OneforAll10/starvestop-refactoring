@@ -8,7 +8,6 @@ public record SubscriptionDto(Long id,
                               String name,
                               String description,
                               Integer day,
-                              Integer mealTime,
                               BigDecimal price,
                               Integer stock,
                               Boolean isJoinable) {

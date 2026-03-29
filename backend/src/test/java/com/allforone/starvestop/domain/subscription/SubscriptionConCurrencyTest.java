@@ -62,7 +62,7 @@ public class SubscriptionConCurrencyTest {
 
         //given
         Subscription subscription = Subscription.create(store, "판교 국밥 화목 저녁 구독", "화·목 퇴근 후 즐기는 국밥 정기 구독",
-                10, 4, new BigDecimal(9200),  1);
+                10, new BigDecimal(9200),  1);
 
         Subscription saved = subscriptionRepository.save(subscription);
 

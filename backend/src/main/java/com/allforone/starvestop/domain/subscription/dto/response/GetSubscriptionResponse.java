@@ -1,8 +1,8 @@
 package com.allforone.starvestop.domain.subscription.dto.response;
 
+import com.allforone.starvestop.domain.subscription.dto.PickupTimeDto;
 import com.allforone.starvestop.domain.subscription.entity.Subscription;
 import com.allforone.starvestop.domain.subscription.enums.Day;
-import com.allforone.starvestop.domain.subscription.enums.MealTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.locationtech.jts.geom.Point;
@@ -20,14 +20,13 @@ public class GetSubscriptionResponse {
     private final String name;
     private final String description;
     private final List<Day> dayList;
-    private final List<MealTime> mealTimeList;
+    private final List<PickupTimeDto> mealTimeList;
     private final BigDecimal price;
     private final Integer stock;
     private final boolean isJoinable;
 
-    public static GetSubscriptionResponse from(Subscription subscription) {
+    public static GetSubscriptionResponse from(Subscription subscription, List<PickupTimeDto> timeDtoList) {
         List<Day> dayList = Day.from(subscription.getDay());
-        List<MealTime> mealTimeList = MealTime.from(subscription.getMealTime());
         return new GetSubscriptionResponse(
                 subscription.getId(),
                 subscription.getStore().getId(),
@@ -36,7 +35,7 @@ public class GetSubscriptionResponse {
                 subscription.getName(),
                 subscription.getDescription(),
                 dayList,
-                mealTimeList,
+                timeDtoList,
                 subscription.getPrice(),
                 subscription.getStock(),
                 subscription.isJoinable()

@@ -29,6 +29,7 @@ public class UserNotification {
     @Column(unique = true)
     private String token;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationPlatformType platform;
 

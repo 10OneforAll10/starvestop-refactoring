@@ -1,6 +1,6 @@
 package com.allforone.starvestop.domain.notification.repository;
 
-import com.allforone.starvestop.domain.notification.dto.SendMealTimeNotificationDto;
+import com.allforone.starvestop.domain.notification.dto.NotificationTargetDto;
 import com.allforone.starvestop.domain.notification.entity.UserNotification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,8 +18,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
                 un.user_id AS userId,
                 un.token AS token,
                 s.id AS subscriptionId,
-                s.name AS subscriptionName,
-                s.meal_time AS mealTimeBit
+                s.name AS subscriptionName
         FROM user_subscriptions us
         JOIN subscriptions s ON s.id = us.subscription_id
         JOIN user_notifications un ON un.user_id = us.user_id
@@ -30,7 +29,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
         ORDER BY us.id
         LIMIT :limit
         """, nativeQuery = true)
-    List<SendMealTimeNotificationDto> findByTargetList(Integer day, Long cursor, Integer limit);
+    List<NotificationTargetDto> findByTargetList(Integer day, Long cursor, Integer limit);
 
     void deleteByToken(String token);
 

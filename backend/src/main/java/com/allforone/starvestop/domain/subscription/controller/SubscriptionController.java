@@ -6,7 +6,7 @@ import com.allforone.starvestop.common.dto.AuthUser;
 import com.allforone.starvestop.common.dto.CommonResponse;
 import com.allforone.starvestop.common.dto.SliceResponse;
 import com.allforone.starvestop.domain.subscription.dto.condition.SearchSubscriptionCond;
-import com.allforone.starvestop.domain.subscription.dto.request.CreateSubscriptionRequest;
+import com.allforone.starvestop.domain.subscription.dto.request.CreateSubscriptionNewRequest;
 import com.allforone.starvestop.domain.subscription.dto.request.UpdateSubscriptionRequest;
 import com.allforone.starvestop.domain.subscription.dto.response.CreateSubscriptionResponse;
 import com.allforone.starvestop.domain.subscription.dto.response.GetSubscriptionDistanceResponse;
@@ -37,13 +37,14 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
 
+
     // 구독 생성
     @Operation(summary = "구독 생성" + ApiRoleLabels.OWNER_ADMIN)
     @PostMapping("/stores/{storeId}/subscriptions")
     public ResponseEntity<CommonResponse<CreateSubscriptionResponse>> createSubscription(
             @Parameter(hidden = true) @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Long storeId,
-            @Valid @RequestBody CreateSubscriptionRequest request
+            @Valid @RequestBody CreateSubscriptionNewRequest request
     ) {
         CreateSubscriptionResponse response = subscriptionService.createSubscription(authUser, storeId, request);
 

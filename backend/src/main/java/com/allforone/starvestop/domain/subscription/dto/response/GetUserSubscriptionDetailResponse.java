@@ -1,8 +1,8 @@
 package com.allforone.starvestop.domain.subscription.dto.response;
 
+import com.allforone.starvestop.domain.subscription.dto.PickupTimeDto;
 import com.allforone.starvestop.domain.subscription.entity.UserSubscription;
 import com.allforone.starvestop.domain.subscription.enums.Day;
-import com.allforone.starvestop.domain.subscription.enums.MealTime;
 import com.allforone.starvestop.domain.subscription.enums.UserSubscriptionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,14 +22,13 @@ public class GetUserSubscriptionDetailResponse {
     private final String storeName;
     private final UserSubscriptionStatus status;
     private final List<Day> dayList;
-    private final List<MealTime> mealTimeList;
+    private final List<PickupTimeDto> timeDtoList;
     private final BigDecimal price;
     private final LocalDateTime createdAt;
     private final LocalDateTime expiresAt;
 
-    public static GetUserSubscriptionDetailResponse from(UserSubscription userSubscription) {
+    public static GetUserSubscriptionDetailResponse from(UserSubscription userSubscription, List<PickupTimeDto> timeDtoList) {
         List<Day> dayList = Day.from(userSubscription.getSubscription().getDay());
-        List<MealTime> mealTimeList = MealTime.from(userSubscription.getSubscription().getMealTime());
         return new GetUserSubscriptionDetailResponse(
                 userSubscription.getId(),
                 userSubscription.getUser().getId(),
@@ -39,7 +38,7 @@ public class GetUserSubscriptionDetailResponse {
                 userSubscription.getSubscription().getStore().getName(),
                 userSubscription.getStatus(),
                 dayList,
-                mealTimeList,
+                timeDtoList,
                 userSubscription.getSubscription().getPrice(),
                 userSubscription.getCreatedAt(),
                 userSubscription.getExpiresAt()

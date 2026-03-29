@@ -104,6 +104,9 @@ public enum ErrorCode {
     SECRET_FILE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "알림에 필요한 비밀 키를 찾을 수 없습니다"),
     INVALID_SECRET_FILE(HttpStatus.INTERNAL_SERVER_ERROR, "알림에 필요한 비밀 키가 손상되었습니다"),
     NOTIFICATION_SEND_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "알림 전송에 실패했습니다"),
+
+    // 비동기 처리
+    ASYNC_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "비동기 처리 중 인터럽트가 발생했습니다"),
     ;
 
     private final HttpStatus status;

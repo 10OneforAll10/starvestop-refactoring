@@ -10,6 +10,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
@@ -35,10 +38,10 @@ public class Subscription extends BaseEntity {
     private int day;
 
     @Column(nullable = false)
-    private int mealTime;
-
-    @Column(nullable = false)
     private BigDecimal price;
+
+    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SubscriptionTime> subscriptionTimes = new ArrayList<>();
 
     @Column(nullable = false)
     private Integer stock;
@@ -46,19 +49,23 @@ public class Subscription extends BaseEntity {
     @Column(nullable = false)
     private boolean isJoinable;
 
-    public Subscription(Store store, String name, String description, int day, int mealTime, BigDecimal price, Integer stock) {
+
+    public Subscription(Store store, String name, String description, int day, BigDecimal price, Integer stock) {
         this.store = store;
         this.name = name;
         this.description = description;
         this.day = day;
-        this.mealTime = mealTime;
         this.price = price;
         this.stock = stock;
         this.isJoinable = true;
     }
 
-    public static Subscription create(Store store, String subscriptionName, String description, int day, int mealTime, BigDecimal price, Integer stock) {
-        return new Subscription(store, subscriptionName, description, day, mealTime, price, stock);
+    public static Subscription create(Store store, String subscriptionName, String description, int day, BigDecimal price, Integer stock) {
+        return new Subscription(store, subscriptionName, description, day, price, stock);
+    }
+
+    public void addTime(String name, LocalTime pickupTime) {
+        this.subscriptionTimes.add(new SubscriptionTime(this, name, pickupTime));
     }
 
     public void changeIsJoinable(boolean joinable) {

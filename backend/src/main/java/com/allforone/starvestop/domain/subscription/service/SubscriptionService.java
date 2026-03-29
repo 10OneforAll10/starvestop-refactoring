@@ -8,16 +8,19 @@ import com.allforone.starvestop.domain.store.dto.StoreRedisDto;
 import com.allforone.starvestop.domain.store.entity.Store;
 import com.allforone.starvestop.domain.store.service.StoreRedisService;
 import com.allforone.starvestop.domain.store.service.StoreService;
+import com.allforone.starvestop.domain.subscription.dto.PickupTimeDto;
 import com.allforone.starvestop.domain.subscription.dto.SubscriptionDto;
 import com.allforone.starvestop.domain.subscription.dto.condition.SearchSubscriptionCond;
-import com.allforone.starvestop.domain.subscription.dto.request.CreateSubscriptionRequest;
+import com.allforone.starvestop.domain.subscription.dto.request.CreateSubscriptionNewRequest;
 import com.allforone.starvestop.domain.subscription.dto.request.UpdateSubscriptionRequest;
 import com.allforone.starvestop.domain.subscription.dto.response.CreateSubscriptionResponse;
 import com.allforone.starvestop.domain.subscription.dto.response.GetSubscriptionDistanceResponse;
 import com.allforone.starvestop.domain.subscription.dto.response.GetSubscriptionResponse;
 import com.allforone.starvestop.domain.subscription.dto.response.UpdateSubscriptionResponse;
 import com.allforone.starvestop.domain.subscription.entity.Subscription;
+import com.allforone.starvestop.domain.subscription.entity.SubscriptionTime;
 import com.allforone.starvestop.domain.subscription.repository.SubscriptionRepository;
+import com.allforone.starvestop.domain.subscription.repository.SubscriptionTimeRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,10 +42,11 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final StoreService storeService;
     private final StoreRedisService storeRedisService;
+    private final SubscriptionTimeRepository subscriptionTimeRepository;
 
     // 구독 생성
     @Transactional
-    public CreateSubscriptionResponse createSubscription(AuthUser authUser, Long storeId, @Valid CreateSubscriptionRequest request) {
+    public CreateSubscriptionResponse createSubscription(AuthUser authUser, Long storeId, @Valid CreateSubscriptionNewRequest request) {
         Store store = storeService.getById(storeId);
 
         Long ownerId = authUser.getUserId();
@@ -54,7 +59,6 @@ public class SubscriptionService {
                 request.getName(),
                 request.getDescription(),
                 request.getDay(),
-                request.getMealTime(),
                 request.getPrice(),
                 request.getStock()
         );
@@ -115,6 +119,15 @@ public class SubscriptionService {
                 perStoreLimit
         );
 
+        List<Long> subscriptionIdList = dtoList.stream()
+                .map(SubscriptionDto::id)
+                .toList();
+
+        List<SubscriptionTime> subscriptionTimeList = subscriptionTimeRepository.findBySubscriptionIdIn(subscriptionIdList);
+
+        Map<Long, List<SubscriptionTime>> timeMap = subscriptionTimeList.stream()
+                .collect(Collectors.groupingBy(time -> time.getSubscription().getId()));
+
         Map<Long, List<SubscriptionDto>> grouped = dtoList.stream()
                 .collect(Collectors.groupingBy(SubscriptionDto::storeId));
 
@@ -128,7 +141,12 @@ public class SubscriptionService {
             Double distance = distanceMap.get(storeId);
             for (SubscriptionDto dto : list) {
                 if (result.size() >= target) break;
-                result.add(GetSubscriptionDistanceResponse.from(dto, distance));
+
+                List<PickupTimeDto> timeList = timeMap.getOrDefault(dto.id(), Collections.emptyList()).stream()
+                        .map(t -> new PickupTimeDto(t.getName(), t.getPickupTime()))
+                        .toList();
+
+                result.add(GetSubscriptionDistanceResponse.from(dto, distance, timeList));
             }
             if (result.size() >= target) break;
         }
@@ -147,15 +165,23 @@ public class SubscriptionService {
     public List<GetSubscriptionResponse> getSubscriptionListByStore(Long storeId) {
         List<Subscription> subscriptionList = subscriptionRepository.findByStoreIdAndIsDeletedIsFalse(storeId);
 
-        return subscriptionList.stream().map(GetSubscriptionResponse::from).toList();
+        return subscriptionList.stream()
+                .map(sub -> {
+                    List<PickupTimeDto> timeDtoList = sub.getSubscriptionTimes().stream()
+                            .map(t -> new PickupTimeDto(t.getName(), t.getPickupTime()))
+                            .toList();
+                    return GetSubscriptionResponse.from(sub, timeDtoList);
+                }).toList();
     }
 
     // 구독 상세 조회
     @Transactional(readOnly = true)
     public GetSubscriptionResponse getSubscription(Long subscriptionId) {
         Subscription subscription = getSubscriptionOrThrow(subscriptionId);
-
-        return GetSubscriptionResponse.from(subscription);
+        List<PickupTimeDto> timeDtoList = subscriptionTimeRepository.findBySubscriptionId(subscriptionId).stream()
+                .map(t -> new PickupTimeDto(t.getName(), t.getPickupTime()))
+                .toList();
+        return GetSubscriptionResponse.from(subscription, timeDtoList);
     }
 
     // 구독 수정

@@ -1,13 +1,13 @@
 package com.allforone.starvestop.domain.notification.entity;
 
 
-import com.allforone.starvestop.domain.notification.enums.MealTimeBit;
+import com.allforone.starvestop.domain.notification.enums.JobStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.LastModifiedDate;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
 @Table(name="notification_jobs",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "nj_senddate_token_sub_meal",
-                        columnNames = {"sendDate", "token", "subscriptionName", "mealTime"}
+                        name = "nj_target_token_sub",
+                        columnNames = {"targetDatetime", "token", "subscriptionName"}
                 )
         },
         indexes = {
-                @Index(name = "idx_job_senddate_meal_id", columnList = "sendDate, mealTime, id"),
+                @Index(name = "idx_job_status_target_id", columnList = "status, targetDatetime, id"),
                 @Index(name = "idx_job_token", columnList = "token")
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -39,27 +39,35 @@ public class NotificationJob {
     @Column(nullable = false)
     private String subscriptionName;
 
+    @Column(nullable = false)
+    private LocalDateTime targetDatetime;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MealTimeBit mealTime;
-
-    @Column(nullable = false)
-    private LocalDate sendDate;
+    private JobStatus status;
 
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
 
-    public NotificationJob(Long userId, String token, String subscriptionName, MealTimeBit mealTime, LocalDate sendDate) {
+    public NotificationJob(Long userId, String token, String subscriptionName, LocalDateTime targetDatetime) {
         this.userId = userId;
         this.token = token;
         this.subscriptionName = subscriptionName;
-        this.mealTime = mealTime;
-        this.sendDate = sendDate;
+        this.targetDatetime = targetDatetime;
+        this.status = JobStatus.PENDING;
+    }
+
+    // 상태 변경 메서드
+    public void changeStatus(JobStatus newStatus) {
+        this.status = status;
     }
 }
 

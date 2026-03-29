@@ -8,6 +8,8 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
   jpa:
     defer-datasource-initialization: true
     hibernate:
@@ -15,7 +17,12 @@ spring:
     properties:
       hibernate:
         format_sql: false
-    show-sql: true
+        jdbc:
+          batch_size: 500
+        order_insert: true
+        order_updates: true
+    show-sql: false
+    open-in-view: false
   data:
     redis:
       host: ${REDIS_HOST}
@@ -25,6 +32,10 @@ spring:
     web:
       pageable:
         max-page-size: 100
+  profiles:
+    active: local
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
   security:
     oauth2:
@@ -94,3 +105,4 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
+  shutdown: graceful

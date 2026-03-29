@@ -1,8 +1,8 @@
 package com.allforone.starvestop.domain.subscription.dto.response;
 
+import com.allforone.starvestop.domain.subscription.dto.request.SubscriptionTimesDto;
 import com.allforone.starvestop.domain.subscription.entity.Subscription;
 import com.allforone.starvestop.domain.subscription.enums.Day;
-import com.allforone.starvestop.domain.subscription.enums.MealTime;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,14 +21,16 @@ public class CreateSubscriptionResponse {
     @Schema(example = "[\"MONDAY\",\"TUESDAY\",\"WEDNESDAY\"]")
     private final List<Day> dayList;
     @Schema(example = "[\"LUNCH\"]")
-    private final List<MealTime> mealTimeList;
+    private final List<SubscriptionTimesDto> mealTimeList;
     private final BigDecimal price;
     private final Integer stock;
     private final LocalDateTime createdAt;
 
     public static CreateSubscriptionResponse from(Subscription subscription) {
         List<Day> dayList = Day.from(subscription.getDay());
-        List<MealTime> mealTimeList = MealTime.from(subscription.getMealTime());
+        List<SubscriptionTimesDto> mealTimeList = subscription.getSubscriptionTimes().stream()
+                .map(t -> new SubscriptionTimesDto(t.getName(), t.getPickupTime()))
+                .toList();
         return new CreateSubscriptionResponse(
                 subscription.getId(),
                 subscription.getStore().getId(),

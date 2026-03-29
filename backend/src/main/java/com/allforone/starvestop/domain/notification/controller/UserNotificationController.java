@@ -7,7 +7,6 @@ import com.allforone.starvestop.common.dto.CommonResponse;
 import com.allforone.starvestop.common.enums.SuccessMessage;
 import com.allforone.starvestop.domain.notification.dto.NotificationDto;
 import com.allforone.starvestop.domain.notification.dto.NotificationMulticastRequest;
-import com.allforone.starvestop.domain.notification.enums.MealTimeBit;
 import com.allforone.starvestop.domain.notification.service.NotificationJobService;
 import com.allforone.starvestop.domain.notification.service.UserNotificationService;
 import com.allforone.starvestop.domain.notification.dto.NotificationTokenRequest;
@@ -18,17 +17,19 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Tag(name = "Notifications", description = "알림(FCM) API")
 @SecurityRequirement(name = OpenApiConfig.BEARER)
 @RestController
@@ -80,13 +81,35 @@ public class UserNotificationController {
     }
 
     @PostMapping("/test")
-    public void test(@RequestParam MealTimeBit mealTime) {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        notificationJobService.sendNotificationJob(today, mealTime);
+    public void test() {
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        notificationJobService.sendNotificationJob(now);
     }
 
     @PostMapping("/test/scheduler")
     public void testScheduler() {
+        log.info("--- 프리로딩 시작 ---");
         notificationJobService.preload();
+        log.info("--- 프리로딩 완료 ----");
+    }
+
+    @PostMapping("/test/overhead/async")
+    public void testAsyncNetworkOverheadTest() {
+
+        notificationJobService.asyncTest(LocalDateTime.now());
+
+    }
+
+    @PostMapping("/test/overhead/sync")
+    public void testSyncNetworkOverheadTest() {
+
+        notificationJobService.syncTest(LocalDateTime.now());
+
+    }
+
+    @PostMapping("/test/zombiejob")
+    public void testRecoverZombieJobs() {
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        notificationJobService.recoverZombieJobs(now);
     }
 }

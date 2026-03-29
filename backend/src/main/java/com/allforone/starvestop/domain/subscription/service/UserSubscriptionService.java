@@ -7,13 +7,16 @@ import com.allforone.starvestop.common.utils.BillingKeyCrypto;
 import com.allforone.starvestop.domain.payment.entity.UserBilling;
 import com.allforone.starvestop.domain.payment.enums.BillingStatus;
 import com.allforone.starvestop.domain.payment.infra.TossBillingClient;
+import com.allforone.starvestop.domain.subscription.dto.PickupTimeDto;
 import com.allforone.starvestop.domain.subscription.dto.response.CreateUserSubscriptionResponse;
 import com.allforone.starvestop.domain.subscription.dto.response.GetUserSubscriptionDetailResponse;
 import com.allforone.starvestop.domain.subscription.dto.response.GetUserSubscriptionResponse;
 import com.allforone.starvestop.domain.subscription.entity.Subscription;
+import com.allforone.starvestop.domain.subscription.entity.SubscriptionTime;
 import com.allforone.starvestop.domain.subscription.entity.UserSubscription;
 import com.allforone.starvestop.domain.subscription.enums.UserSubscriptionStatus;
 import com.allforone.starvestop.domain.subscription.repository.SubscriptionRepository;
+import com.allforone.starvestop.domain.subscription.repository.SubscriptionTimeRepository;
 import com.allforone.starvestop.domain.subscription.repository.UserSubscriptionRepository;
 import com.allforone.starvestop.domain.user.entity.User;
 import com.allforone.starvestop.domain.user.service.UserService;
@@ -33,6 +36,7 @@ public class UserSubscriptionService {
     private final UserService userService;
     private final SubscriptionRepository subscriptionRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final SubscriptionTimeRepository subscriptionTimeRepository;
     private final TossBillingClient tossBillingClient;
     private final BillingKeyCrypto billingKeyCrypto;
 
@@ -87,7 +91,12 @@ public class UserSubscriptionService {
 
         checkPermission(authUser, userSubscription);
 
-        return GetUserSubscriptionDetailResponse.from(userSubscription);
+        List<SubscriptionTime> subscriptionTime = subscriptionTimeRepository.findBySubscriptionId(userSubscription.getSubscription().getId());
+
+        List<PickupTimeDto> timeDtoList = subscriptionTime.stream()
+                .map(t -> new PickupTimeDto(t.getName(), t.getPickupTime()))
+                .toList();
+        return GetUserSubscriptionDetailResponse.from(userSubscription, timeDtoList);
     }
 
     //사용자 구독 취소

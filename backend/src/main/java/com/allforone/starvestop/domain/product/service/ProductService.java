@@ -22,9 +22,13 @@ import com.allforone.starvestop.domain.store.entity.Store;
 import com.allforone.starvestop.domain.store.service.StoreRedisService;
 import com.allforone.starvestop.domain.store.service.StoreService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -236,7 +240,11 @@ public class ProductService {
     public void decreaseStockBulkBatchUpdate(List<StockDecreaseRequest> request) {
         productBulkUpdateRepository.decreaseStockWithBatchUpdate(request);
     }
-
+    @Retryable(
+            retryFor = {CannotAcquireLockException.class, PessimisticLockingFailureException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100, multiplier = 2)
+    )
     @Transactional
     public void decreaseStockUpdate(List<StockDecreaseRequest> request) {
         request.sort(Comparator.comparing(StockDecreaseRequest::getProductId));
@@ -250,7 +258,11 @@ public class ProductService {
     public void increaseById(Long id, Integer count) {
         productRepository.findByIdAndIncreaseStock(id, count);
     }
-
+    @Retryable(
+            retryFor = {CannotAcquireLockException.class, PessimisticLockingFailureException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100, multiplier = 2)
+    )
     @Transactional
     public void increaseStockBulkBatchUpdate(List<OrderProductQuantityDto> request) {
         productBulkUpdateRepository.increaseStockWithBatchUpdate(request);
