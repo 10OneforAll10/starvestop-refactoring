@@ -1,5 +1,6 @@
 package com.allforone.starvestop.domain.notification.scheduler;
 
+import com.allforone.starvestop.domain.notification.dto.PreloadResult;
 import com.allforone.starvestop.domain.notification.enums.JobStatus;
 import com.allforone.starvestop.domain.notification.service.NotificationJobService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class DailyNotificationScheduler {
 
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
     public void preloadToday() {
-        jobService.preload();
+        preload();
     }
 
 
@@ -35,5 +36,18 @@ public class DailyNotificationScheduler {
                 oneWeekAgo);
 
         log.info("알림 발송 로그 {}건 삭제", deletedCount);
+    }
+
+    public void preload() {
+        long cursor = 0;
+        while (true) {
+            PreloadResult result = jobService.preload(cursor);
+            if (!result.dtoList().isEmpty()) {
+                jobService.saveJobList(result.dtoList());
+            }
+
+            if (!result.hasNext()) break;
+            cursor = result.nextCursor();
+        }
     }
 }

@@ -88,9 +88,6 @@ public class UserNotificationController {
 
     @PostMapping("/test/scheduler")
     public void testScheduler() {
-        log.info("--- 프리로딩 시작 ---");
-        notificationJobService.preload();
-        log.info("--- 프리로딩 완료 ----");
     }
 
     @PostMapping("/test/overhead/async")

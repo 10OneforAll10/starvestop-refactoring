@@ -1,7 +1,9 @@
 package com.allforone.starvestop.domain.notification.service;
 
 import com.allforone.starvestop.domain.notification.dto.FcmMessageResult;
+import com.allforone.starvestop.domain.notification.dto.NotificationJobCreateDto;
 import com.allforone.starvestop.domain.notification.dto.NotificationTargetDto;
+import com.allforone.starvestop.domain.notification.dto.PreloadResult;
 import com.allforone.starvestop.domain.notification.entity.NotificationJob;
 import com.allforone.starvestop.domain.notification.enums.DayBit;
 import com.allforone.starvestop.domain.notification.enums.JobStatus;
@@ -13,7 +15,6 @@ import com.allforone.starvestop.domain.subscription.repository.SubscriptionTimeR
 import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,56 +41,58 @@ public class NotificationJobService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private final FcmSender fcmSender;
 
-    @Transactional
-    public void preload() {
+    public PreloadResult preload(long cursorId) {
         int dayBit = DayBit.todayBit();
         LocalDate today = LocalDate.now(KST);
 
         final int pageSize = 5000;
-        long cursor = 0L;
 
-        while (true) {
 
-            List<NotificationTargetDto> targets =
-                    userNotificationRepository.findByTargetList(dayBit, cursor, pageSize);
+        List<NotificationTargetDto> targetList =
+                userNotificationRepository.findByTargetList(dayBit, cursorId, pageSize);
 
-            if (targets.isEmpty()) return;
+        if (targetList.isEmpty())
+            return new PreloadResult(Collections.emptyList(), 0);
 
-            // IN절을 위한 구독 아이디 추출
-            List<Long> subscriptionIdList = targets.stream()
-                    .map(NotificationTargetDto::subscriptionId)
-                    .distinct()
+        // IN절을 위한 구독 아이디 추출
+        List<Long> subscriptionIdList = targetList.stream()
+                .map(NotificationTargetDto::subscriptionId)
+                .distinct()
+                .toList();
+
+
+        List<SubscriptionTime> times = subscriptionTimeRepository.findBySubscriptionIdIn(subscriptionIdList);
+        Map<Long, List<SubscriptionTime>> timeMap = times.stream()
+                .collect(Collectors.groupingBy(t -> t.getSubscription().getId()));
+
+        //위의 데이터 조립
+        List<NotificationJobCreateDto> dtoList =  targetList.stream()
+                .flatMap( t-> timeMap.getOrDefault(t.subscriptionId(), Collections.emptyList()).stream()
+                            .map(st -> {
+                                LocalDateTime targetTime = LocalDateTime.of(today, st.getPickupTime()).minusMinutes(30);
+                                return new NotificationJobCreateDto(
+                                        t.userId(), t.token(), t.subscriptionName(), targetTime
+                                );
+                            }))
+                .filter(j -> j.token() != null && !j.token().isBlank())
+                .toList();
+
+        long nextCursor = targetList.get(targetList.size() - 1).cursorId();
+        if (nextCursor <= cursorId) {
+            nextCursor = 0;
+        }
+
+        return new PreloadResult(dtoList, nextCursor);
+    }
+
+    @Transactional
+    public void saveJobList(List<NotificationJobCreateDto> dtoList) {
+        if (!dtoList.isEmpty()) {
+            List<NotificationJob> jobList = dtoList.stream()
+                    .map(dto -> new NotificationJob(dto.userId(), dto.token(), dto.subscriptionName(), dto.targetTime()))
                     .toList();
 
-
-            List<SubscriptionTime> times = subscriptionTimeRepository.findBySubscriptionIdIn(subscriptionIdList);
-            Map<Long, List<SubscriptionTime>> timeMap = times.stream()
-                    .collect(Collectors.groupingBy(t -> t.getSubscription().getId()));
-
-            //위의 데이터 조립
-            List<NotificationJob> jobs = targets.stream()
-                    .flatMap( t-> {
-                        List<SubscriptionTime> subTimes = timeMap.getOrDefault(t.subscriptionId(), Collections.emptyList());
-
-                        return subTimes.stream().map(st -> {
-                            LocalDateTime targetTime = LocalDateTime.of(today, st.getPickupTime()).minusMinutes(30);
-                            return new NotificationJob(t.userId(), t.token(), t.subscriptionName(), targetTime);
-                        });
-                    })
-                    .filter(j -> j.getToken() != null && !j.getToken().isBlank())
-                    .toList();
-
-            if (!jobs.isEmpty()) {
-                try {
-                    notificationJobJdbcRepository.bulkInsertIgnore(jobs);
-                } catch (DataIntegrityViolationException e) {
-                    //유니크 충돌 무시
-                }
-            }
-
-            long nextCursor = targets.get(targets.size() - 1).cursorId();
-            if (!(nextCursor > cursor)) break;
-            cursor = nextCursor;
+            notificationJobJdbcRepository.bulkInsertIgnore(jobList);
         }
     }
 
