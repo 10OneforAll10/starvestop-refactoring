@@ -7,6 +7,7 @@ import com.allforone.starvestop.common.dto.CommonResponse;
 import com.allforone.starvestop.common.enums.SuccessMessage;
 import com.allforone.starvestop.domain.notification.dto.NotificationDto;
 import com.allforone.starvestop.domain.notification.dto.NotificationMulticastRequest;
+import com.allforone.starvestop.domain.notification.scheduler.DailyNotificationScheduler;
 import com.allforone.starvestop.domain.notification.service.NotificationJobService;
 import com.allforone.starvestop.domain.notification.service.UserNotificationService;
 import com.allforone.starvestop.domain.notification.dto.NotificationTokenRequest;
@@ -39,6 +40,7 @@ public class UserNotificationController {
 
     private final UserNotificationService userNotificationService;
     private final NotificationJobService notificationJobService;
+    private final DailyNotificationScheduler dailyNotificationScheduler;
 
     @Operation(summary = "FCM 토큰 저장" + ApiRoleLabels.USER_OWNER)
     @PostMapping("/save/token")
@@ -108,5 +110,10 @@ public class UserNotificationController {
     public void testRecoverZombieJobs() {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         notificationJobService.recoverZombieJobs(now);
+    }
+
+    @PostMapping("/test/preloading")
+    public void testPreloading() {
+        dailyNotificationScheduler.preload();
     }
 }
